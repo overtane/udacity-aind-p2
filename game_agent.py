@@ -174,7 +174,7 @@ class MinimaxPlayer(IsolationPlayer):
         """Implement depth-limited minimax search algorithm as described in
         the lectures.
 
-        This should be a modified version of MINIMAX-DECISION in the AIMA text.
+        A modified version of MINIMAX-DECISION in the AIMA text.
         https://github.com/aimacode/aima-pseudocode/blob/master/md/Minimax-Decision.md
 
         **********************************************************************
@@ -212,8 +212,56 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        best_score = float("-inf") 
+        best_move = (-1,-1)
+    
+        for m in game.get_legal_moves():
+            score = self.min_value(game.forecast_move(m), depth-1)
+            if score > best_score:
+                best_score = score
+                best_move = m
+            
+        return best_move
+
+    def terminal_test(self, game, depth):
+        """ Return True if the game is over for the active player or 
+        the search reached maximum depth, and False otherwise.
+        """
+        return (depth == 0) or (len(game.get_legal_moves()) == 0)
+
+    def min_value(self, game, depth):
+        """ Return the score for a win if max depth has been reached,
+        otherwise return the minimum value over all legal child nodes.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if self.terminal_test(game, depth):
+            score = self.score(game, self)
+        else:
+            score = float("inf") 
+            for m in game.get_legal_moves():
+                newGame = game.forecast_move(m)
+                score = min(score, self.max_value(newGame, depth-1))
+
+        return score
+
+    def max_value(self, game, depth):
+        """ Return the score for a loss if max depth has been reached,
+        otherwise return the maximum value over all legal child§ nodes.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        
+        if self.terminal_test(game, depth):
+            score = self.score(game, self)
+        else:
+            score = float("-inf") 
+            for m in game.get_legal_moves():
+                newGame = game.forecast_move(m)
+                score = max(score, self.min_value(newGame, depth-1))
+
+        return score
 
 
 class AlphaBetaPlayer(IsolationPlayer):
