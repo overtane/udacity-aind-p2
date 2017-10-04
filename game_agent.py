@@ -42,7 +42,11 @@ def custom_score(game, player):
 
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    score = own_moves - 2 * opp_moves
+    if opp_moves == 0:
+        score = 10 # easy win if opponent has no moves left
+    else:
+        score = own_moves - opp_moves
+
     return float(score)
 
 
@@ -68,8 +72,30 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    x,y = game.get_player_location(player)
+
+    a = [ [ 1, 2, 3, 3, 3, 2, 1], \
+          [ 2, 3, 5, 5, 5, 3, 2], \
+          [ 3, 5, 8, 7, 8, 5, 3], \
+          [ 3, 5, 7, 7, 7, 5, 3], \
+          [ 3, 5, 8, 7, 8, 5, 3], \
+          [ 2, 3, 5, 5, 5, 3, 2], \
+          [ 1, 2, 3, 3, 3, 3, 1] ]
+
+    blanks = len(game.get_blank_spaces())
+
+    if blanks < 35:
+        score = a[x][y]
+    else:
+        score = -1 * a[x][y] # favor outer cell in the beginning
+
+    return float(score)
 
 
 def custom_score_3(game, player):
@@ -94,8 +120,32 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    if own_moves > 0 or (own_moves == 0 and opp_moves == 0):
+        score = 10 - opp_moves # try to minimize opponent's moves ...
+    else:
+        score = 0 # ... keeping also in mind that we need to have moves left
+
+    #blanks = len(game.get_blank_spaces())
+    #x1, y1 = game.get_player_location(player)
+    #x2, y2 = game.get_player_location(game.get_opponent(player))
+    #reward = -2 if (abs(x1-x2) <= 1 and abs(y1-y2) <= 1) else 0
+    #moves = len(game.get_legal_moves(player))
+    #score = moves + reward 
+    #score = len(game.get_legal_moves(player))
+    #if blanks >= 20:
+    #    score *= -1
+    #    if score == 0:
+    #        score = -9
+
+    return float(score)
 
 
 class IsolationPlayer:
@@ -316,6 +366,11 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         #assert self.time_left() > 0
 
+        # if no move selected pick the first from the list of legal moves
+        if best_move == (-1,-1):
+            moves = game.get_legal_moves()
+            best_move = moves[0] if len(moves)>0 else (-1,-1)
+
         # Return the best move from the last completed search iteration
         return best_move
 
@@ -380,10 +435,10 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        score = float("inf") 
         if self.terminal_test(game, depth):
             score = self.score(game, self)
         else:
+            score = float("inf") 
             for m in game.get_legal_moves():
                 newGame = game.forecast_move(m)
                 score = min(score, self.max_value(newGame, depth-1, alpha, beta))
@@ -399,10 +454,10 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         
-        score = float("-inf") 
         if self.terminal_test(game, depth):
             score = self.score(game, self)
         else:
+            score = float("-inf") 
             for m in game.get_legal_moves():
                 newGame = game.forecast_move(m)
                 score = max(score, self.min_value(newGame, depth-1, alpha, beta))
